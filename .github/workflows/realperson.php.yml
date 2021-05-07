@@ -1,0 +1,42 @@
+name: Package PHP SDK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['5.6']
+    name: Package PHP SDK With PHP${{ matrix.php-versions }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: mbstring, intl
+        ini-values: post_max_size=256M, max_execution_time=180
+        coverage: xdebug        
+        tools: php-cs-fixer, phpunit
+
+    - name: Validate composer.json and composer.lock
+      run: |
+        git config --global user.email "coderlius@163.com"
+        git config --global user.name "coderlius"
+        git clone https://github.com/antchain-openapi-sdk-php/REALPERSON.git realperson
+        cd realperson/ && rm -rf ./composer.lock && composer update -vvv
+        rm -rf .git/ .gitignore
+        git add . -f
+        git add ./vendor/ -f
+        git checkout -b package/php-sdk
+        git commit -m "Package PHP SDK"
+        git push --force --set-upstream origin package/php-sdk
